@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: checkers-solver/backend/go.mod
+      - name: Run tests
+        working-directory: checkers-solver/backend
+        run: go test -v -race -coverprofile=coverage.out ./...
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: checkers-solver/backend/coverage.out
+          fail_ci_if_error: false
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: checkers-solver/frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: checkers-solver/frontend
+        run: npm ci
+      - name: Lint
+        working-directory: checkers-solver/frontend
+        run: npm run lint
+      - name: Build
+        working-directory: checkers-solver/frontend
+        run: npm run build
